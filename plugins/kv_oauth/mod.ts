@@ -1,5 +1,6 @@
 import type { Plugin } from "$fresh/server.ts";
 import { createGitHubOAuthConfig, createHelpers } from "jsr:@deno/kv-oauth";
+import { LOCALHOST_PORT } from "../../const.ts";
 
 const { signIn, handleCallback, signOut, getSessionId } = createHelpers(
   createGitHubOAuthConfig(),
@@ -11,7 +12,17 @@ export default {
     {
       path: "/api/auth/github-signin",
       async handler(req) {
-        return await signIn(req);
+        const urlParams = {} as { redirect_uri?: string };
+        const redirect_uri = !Deno.env.has("DENO_DEPLOYMENT_ID") &&
+          `http://localhost:${LOCALHOST_PORT}/api/auth/github-callback`;
+
+        if (redirect_uri) {
+          urlParams.redirect_uri = redirect_uri;
+        }
+
+        return await signIn(req, {
+          urlParams,
+        });
       },
     },
     {
